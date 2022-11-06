@@ -1,0 +1,408 @@
+---
+title: "BellaBeat Fitness Company Case Study"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+# How Can a Wellness Technology Company Play It Smart?
+
+
+
+**Background:**
+
+Urška Sršen and Sando Mur founded Bellabeat, a high-tech company that manufactures health-focused smart products. Sršen used her background as an artist to develop beautifully designed technology that informs and inspires women around the world. Collecting data on activity, sleep, stress, and reproductive health has allowed Bellabeat to empower women with knowledge about their own health and habits. Since it was founded in 2013, Bellabeat has grown rapidly and quickly positioned itself as a tech-driven wellness company for women. By 2016, Bellabeat had opened offices around the world and launched multiple products. Bellabeat products became available through a growing number of online retailers in addition to their own e-commerce channel on their website. The company has invested in traditional advertising media, such as radio, out-of-home billboards, print, and television, but focuses on digital marketing extensively. Bellabeat invests year-round in Google Search, maintaining active Facebook and Instagram pages, and consistently engages consumers on Twitter. Additionally, Bellabeat runs video ads on Youtube and display ads on the Google Display Network to support campaigns around key marketing dates. Sršen knows that an analysis of Bellabeat’s available consumer data would reveal more opportunities for growth. She has asked the marketing analytics team to focus on a Bellabeat product and analyze smart device usage data in order to gain insight into how people are already using their smart devices. Then, using this information, she would like high-level recommendations for how these trends can inform Bellabeat marketing strategy.
+
+**Aim for analyzing this case study**
+
+1.Analyze smart device data to gain insight into how consumers are using their smart devices
+
+2.Present the analysis to the Bellabeat executive team along with your high-level recommendations for Bellabeat’s marketing strategy
+
+**Bellabeat's Current Marketting Strategy**
+
+1.Bellabeat products became available through a growing number of online retailers in addition to their own website.
+
+2.The company has invested in traditional advertising media: radio, out-of-home billboards, print, and television.
+
+3.Focused on digital marketing extensively.
+
+4.Invests year-round in Google Search , maintaining active Facebook and Instagram pages, and consistently engages   consumers on twitter.
+
+5.Runs video ads on Youtube and display ads on the Google Display Network to support campaigns around key marketing dates.
+
+**Google Data Analytics Steps:** 
+Ask, Prepare, Process, Analyze, Share, Act
+
+Let's go with the steps one by one
+
+**-> Ask Phase : What do we need to know?**
+
+What are some trends in smart device usage?
+
+How could these trends apply to Bellabeat customers?
+
+How could these trends help influence Bellabeat marketing strategy?
+
+Some questions after looking through the datasets will be
+
+What is the problem you are trying to solve?
+
+How can your insights drive business decisions?
+
+**-> Prepare Phase : What is our Data?**
+
+**Data Collection:**
+
+**What?:** This Kaggle public data set contains personal fitness tracker data from thirty FitBit users, including minute-level data for physical activity, heart rate, and sleep monitoring.
+
+**Who?:** The dataset was collected by Amazon Mechanical Turk from consenting FitBit users in their survey.
+
+**Why?:** The data was to collected with an inspiration to understand Human temporal routine behavior and pattern recognition.
+
+**Data Brief:** The dataset contains 18 tables linked via the user IDs and timestamps. These tables contain information pertaining to the various intensities of physical activity,sedantary periods, calories burned (measured on daily basis, hourly basis and minute-wise basis)sleep duration(daily and minute-wise) and its frequency, weight logs, as well as heartrate.
+
+**Data Limitations:**
+
+The data has been collected with predefined datasets with limited data. This makes it outdated to use and get current data.
+
+The sample size is of around 33 participants for most of the parameters and lesser for parmeters like heart rate per second (7) and weight (8). It is not sufficient to establish a good confidence level.
+
+The data set does not provide any demographic information pertaining to the participants which makes it difficult to analyse the data with respect to Bellabeat's target of female customers.
+
+# Findings to proceed with data
+
+**Preparing Work Environment by loading Packages and Data**
+
+```{r}
+# Loading the required Libraries
+
+library(tidyverse)
+library(skimr)
+library(janitor)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(here)
+```
+
+
+```{r}
+# Loading the data
+
+daily_activity <- read.csv("dailyActivity_merged.csv")
+hourly_intensity <- read.csv("hourlyIntensities_merged.csv")
+daily_sleep <- read.csv("sleepDay_merged.csv")
+weight <- read.csv("weightLogInfo_merged.csv")
+```
+
+```{r}
+# Checking the datasets with either head()
+
+head(daily_activity)
+head(hourly_intensity)
+head(daily_sleep)
+head(weight)
+```
+**-> Process Phase: Data Cleaning**
+
+For ensuring that each table is cleaned we need to perform the following:
+
+Ensure the naming consistancy.
+
+Check and Remove duplicates and errors if any.
+
+Store time and date in different columns.
+
+**Removing duplicates and ensuting naming conventions**
+```{r}
+daily_activity<- daily_activity%>%
+clean_names()%>%
+unique()%>%
+glimpse()
+hourly_intensity<- hourly_intensity%>%
+clean_names()%>%
+unique()%>%
+glimpse()
+daily_sleep<-daily_sleep%>%
+clean_names()%>%
+unique()%>%
+glimpse()
+weight<- weight%>%
+clean_names()%>%
+unique()%>%
+glimpse()
+
+```
+
+**Making date formats consistent and Store time and date in different columns**
+```{r}
+# daily_activity table
+daily_activity$date<-mdy(daily_activity$activity_date)
+#adding a new column "day" for finding out the day-wise trends
+daily_activity$day<- format(daily_activity$date, "%A")
+
+daily_activity<- subset(daily_activity, select= -c(activity_date))
+head(daily_activity)
+
+# hourly_intensity table
+hourly_intensity$date<- mdy_hms(hourly_intensity$activity_hour)
+hourly_intensity$intensity_hour<-format(hourly_intensity$date,format= "%H:%M")
+hourly_intensity$intensity_day<-format(hourly_intensity$date, format= "%A")
+hourly_intensity<- subset(hourly_intensity, select= -activity_hour)
+head(hourly_intensity)
+
+#sleep log table
+daily_sleep$date<- mdy_hms(daily_sleep$sleep_day)
+daily_sleep$day<- format(daily_sleep$date, "%A")
+# adding a column to determine the time participants lie awake in bed
+new_sleep<-daily_sleep%>%
+mutate(total_time_awake_in_bed= ( total_time_in_bed- total_minutes_asleep) )%>%
+glimpse()
+new_sleep<- subset(new_sleep, select= -sleep_day)
+head(new_sleep)
+
+#weight table
+weight$date<- mdy_hms(weight$date)
+weight$weight_day<-format(weight$date, "%A")
+head(weight)
+```
+**Ensuring that the individual distances sums up to the total distance**
+```{r}
+l<-daily_activity%>%
+mutate(new_sum= light_active_distance+moderately_active_distance+very_active_distance)%>%
+subset(select=c(id, total_distance,new_sum, light_active_distance,moderately_active_distance,very_active_distance))
+head(l)
+```
+
+As evident from above:
+
+1.The sum of induvidual distances(light_active_distance,moderately_active_distance,very_active_distance) does not add upto the total distance specified. This makes any analysis based upon **the sum of these values incorrect**. Hence we will not use the sum of these value in any part of our analysis.
+
+2.Another noticable fact is that **the most users are majorly lightly active throughout the total distance they cover**. Hence, the need to promote some high intensity activites, so that the users may see evident changes.
+
+Now we will be **merging** the cleaned daily_activity and daily_sleep tables for ease of analysis and visualisation
+
+```{r}
+#merging daily_activity and new_sleep tables on date, day and userIDs.
+#Since daily activity table has more number of participants we will use"all.x=TRUE" 
+#to ensure that all the non-matching cases of x are appended to the result as well.
+
+daily<- merge(daily_activity, new_sleep, by= c("id", "date", "day"), all.x= TRUE)
+daily<- distinct(daily)
+glimpse(daily)
+```
+
+**-> Analyse Phase : Finding Trends in Data**
+
+**Summary statistics of all our tables: To get brief insights of our data**
+
+```{r}
+# daily table
+summary(select(daily, total_steps, total_distance, sedentary_minutes, calories, 
+total_minutes_asleep, total_time_in_bed,   total_time_awake_in_bed))
+```
+```{r}
+# hourly_intensity table
+ summary(select(hourly_intensity, total_intensity))
+```
+From the above we can note that:
+
+1.The **mean** of total_steps for about 34 participants is below 8,000 which is not sufficient to see maximum health benefits. This shows that most users of fitness devices would require some motivation to increase their activity levels.
+
+2.The mean **sedantary minutes are a staggering 991.2 minutes (16.5 hours)**. This metric gives us the insight that most fitness device users are likely to be people who have long sitting hours and do a desk job- a great idea of target group for bellabeat marketing.
+
+3.The analysis shows that **an average participant remains awake in bed for 21-30 minutes**, before they are finally able to sleep.
+
+4.The mean Intensity per hour for the participants was merely **12 minutes**.
+
+There are days for each participant when no information has been collected. Let us find out the total number of days for each participant when the data was collected.
+```{r}
+days<- daily%>%
+group_by(id)%>%
+summarise(number_of_days_info_collected= n_distinct(date))%>%
+arrange(number_of_days_info_collected)
+days
+```
+As we see, information was **not collected for all the participants on all the days**. Why did the device did not collect information on few days? was the device not used on said dates? or perhaps the participants were involved in other activities like jump rope, swimming, bicycling etc that the device could not register?
+
+**Finding out the target audience**
+
+We can do this by analysing either the steps taken, the calories burned or the very_active_minutes against the days of the week.
+
+```{r}
+# by Calories burned
+ta_calories<-daily%>%
+group_by(day)%>%
+summarise(sum_calories= sum(calories) )
+ta_calories
+```
+```{r}
+# By very_active_minutes
+ta_sum_very_active_mins<-daily%>%
+group_by(day)%>%
+summarise(sum_very_active_mins= sum(very_active_minutes) )
+ta_sum_very_active_mins
+```
+```{r}
+# Plotting the results down for better understanding, with geom_histogram and some fancy esthetics
+ggplot(daily,mapping=aes(x=day, weight=very_active_minutes, fill=day))+geom_histogram(stat="count", 
+colour="white", alpha=0.4)+labs(y="sum_very_active_minutes")+theme(panel.background=element_blank(), axis.line=element_line(colour="black"))
+```
+Let us confirm our analysis once, with similar calculations and plotting for **total_steps taken on each day**
+
+```{r}
+# By total_steps taken on each day
+ta_sum_steps<- daily%>%
+group_by(day)%>%
+summarise(sum_steps= sum(total_steps))
+ta_sum_steps
+```
+```{r}
+# Plotting the results with  geom_col 
+plot<-ggplot(ta_sum_steps, mapping=aes(x= day, y=sum_steps, fill=day))+geom_col(colour="white", 
+alpha= 0.4)
+plot+theme(panel.background=element_blank(), axis.line=element_line(colour="black"))
+```
+
+from the above we achieve that:
+
+The most active days for participants are **Tuesdays and Wednesdays**
+
+The least active day for participants are **Sundays followed by Fridays**
+
+So the target audience for Bellabeat is one that most likely:
+
+aims to relax and rest on the beginning and end of weekends(Fridays and Sundays) but
+
+follows a routine and remains active throughout the workdays(mon-thursdays) ,
+
+while being most energetic and active during the mid-week period(Tuesdays and Wednesdays)
+
+```{r}
+ta_very_active_dist_sum<-daily%>%
+group_by(day)%>%
+summarise(very_active_dist_sum= sum(very_active_distance))
+ta_very_active_dist_sum
+```
+**Let us also find out the time of the day when the users are most active**
+
+```{r}
+ta_hourly_intensity<- hourly_intensity%>%
+group_by(intensity_hour)%>%
+summarise(sum_total_intensity= sum(total_intensity))
+ta_hourly_intensity
+```
+```{r}
+# Visulaising the results
+p<-ggplot(ta_hourly_intensity, aes(intensity_hour, sum_total_intensity, colour=intensity_hour,
+fill=intensity_hour ))+ geom_col(alpha=0.1)
+p+labs(x="time of day", y="sum of intensity")+ theme(axis.text.x= element_text(angle=90),
+legend.position = "top", panel.background=element_blank(), axis.line=element_line(colour="black"))
+```
+
+From the above we can note that:
+
+The most active Time period for participants is **around 5pm to 7pm**
+
+The least active timeframe for the participants is obviously the early morning hours of **2am to 4am**
+
+So **the target audience for Bellabeat** is one that is most likely:
+
+full time workers who focus on their physical health after work hours are finished (5pm to 7pm)
+
+**Further Visual Analysis**
+
+Understanding **the correlation between the calories burned and the total steps taken**
+
+```{r}
+cor(x=daily$total_steps, y=daily$calories, method="pearson")
+```
+```{r}
+ggplot(daily,aes(x= total_steps, y=calories))+geom_point(colour="purple")+ geom_smooth(alpha=0.1, colour= "orange")+labs(title = "Correlation between total steps and Calories burned")+theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
+```
+
+The above analysis shows a **slightly positive relation between increase in daily number of steps and calories burned** i.e with every increase in the number of steps, the calories burned increases.
+
+This information can be used to market features that involve setting and attaining goals to burn more calories by increasing the daily steps.
+
+Understanding **the correlation between Calories burned and the sleeplessness period in bed**
+
+```{r}
+daily_without_na<-daily%>%
+drop_na()
+glimpse(daily_without_na)
+```
+
+```{r}
+cor(x=daily_without_na$total_time_awake_in_bed, y=daily_without_na$calories, method="pearson")
+```
+
+```{r}
+ggplot(daily_without_na, mapping=aes(total_time_awake_in_bed, calories))+geom_point(colour="purple")+facet_wrap(~total_sleep_records) +geom_smooth(colour="orange")+ theme(panel.background=element_blank(), axis.line=element_line(colour="black"))
+```
+
+The analysis is depicting **slightly negative correlation between energy expenditure throughout the day and sleeplessness while in bed**. This means that an increased period of activity is associated with less time spend in bed before finally sleeping.
+
+Let us also analyse **the relationship between sedantry minutes and sleep duration**
+
+```{r}
+cor(x=daily_without_na$total_minutes_asleep, y=daily_without_na$sedentary_minutes, method="pearson")
+```
+
+```{r}
+#plotting the same
+ggplot(daily_without_na, mapping=aes(total_minutes_asleep,sedentary_minutes))+geom_point(colour="purple")+
+  facet_wrap(~total_sleep_records)+geom_smooth(colour="orange")+theme(panel.background=element_blank(), axis.line=element_line(colour="black"))
+```
+
+As seen in both of the above analysis:
+
+Having increased activity throughout the day is related to **less awake time before sleeping**.
+
+Likewise increased periods of inactivity(sedantary minutes) is associated with poor amount of sleep.
+
+These insights can be used to **market the Bellabeat for saliant feature of improved sleep with regular physical activity**.
+
+**-> Share Phase : Sharing Recommendations**
+
+**Summary of our Target Audience:**
+
+Bellabeat's marketing team needs to focus their marketing towards the user segment that are:
+
+1.Working adults that mostly does a routine(9-5) desk jobs. These users indulge in some light_activity to maintain their health but they definitely need some motivation **to increase their activity levels to reap maximum health benefits**.
+
+2.These users also have a **sleepless phase of 20-30 minutes in bed** before they are finally able sleep.
+
+3.They remain active throughout the **workdays(Mon-Thurs)** but considers relaxing on the weekends.
+
+**Recommendations for the data**
+
+1.The sample size of the data is too small, it needs to be expanded to draw any strong conclusions.
+
+2.The number of participants should be equal for all the parameters, lack of it presented many difficulties while analysis. Some parameters have really few participants(weight logs and heart rate per second) which makes them unsuitable for analysis.
+
+3.The data for the of values for VeryActiveDistance, ModeratelyActiveDistance and LightActiveDistance needs to be reassesed as their sum does not add upto the total distance for daily activity, this renders any analysis that can be performed on sum of these parameters as inaccurate.
+
+Also, some information on the demographics of the users such as gender, age, and height , would provide deep insights for developing strategies, keeping in mind Bellabeat's vision of products curation especially for women.
+
+**Recommendations for the app**
+Along with tracking the active movements, Bellabeat can have enhanced features such as a water log so that users can track their hydration status and maintain their overall health.
+
+The app can also include sublte features of notifications or alarms for sleep schedules or going early to bed to enhance the user's overall experience.
+
+Lastly, the users have a number of days when no activity has been logged. One possibility is that the app did not register other forms of physical activity like biking, swimming, or playing a sport, muscle strengthning exercises etc. The app should include metrics to register these activities as well to provide a wholesome user experience.
+
+**-> Act Phase : Future marketting startegy**
+
+Most users struggle to remain highly active thrughout the day(Overall, the duration of "light active minutes" is much higher than "very active minutes"). This can be used to market some high intensity, short duration workouts so that the customers reap more health benefits.
+
+There were very few users who logged in their weight details every day because it is a manual task. Bellabeat can utilize this information to promote features like weight log notifications and even daily alarms, reminding the users about the scheduled time for their daily physical activity.
+
+Since the app generates a lot of health data, this information can be leveraged to develop and sell personalised goals and activity suggestions.
+
+Finally, Many Participants experience a sleepless period of about 20-30 minutes in bed, Bellabeat can develop and promote sleep assisting features such as sleep inducing music, sleep journals, etc.
+
+**Final note**
+The analysis strategies have been seen from some data analyst's methods and tried in those ways. Thanks for going through the steps.
